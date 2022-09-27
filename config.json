@@ -1,6 +1,10 @@
 {
+  "_name_or_path": "openai/whisper-base",
   "activation_dropout": 0.0,
   "activation_function": "gelu",
+  "architectures": [
+    "WhisperForConditionalGeneration"
+  ],
   "attention_dropout": 0.0,
   "bos_token_id": 50257,
   "d_model": 512,
@@ -8,7 +12,7 @@
   "decoder_ffn_dim": 2048,
   "decoder_layerdrop": 0.0,
   "decoder_layers": 6,
-  "decoder_start_token_id": 50257,
+  "decoder_start_token_id": 50258,
   "dropout": 0.0,
   "encoder_attention_heads": 8,
   "encoder_ffn_dim": 2048,
@@ -112,6 +116,7 @@
   "num_mel_bins": 80,
   "pad_token_id": 0,
   "scale_embedding": false,
+  "torch_dtype": "float32",
   "transformers_version": "4.23.0.dev0",
   "use_cache": true,
   "vocab_size": 51865
