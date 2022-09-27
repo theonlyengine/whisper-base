@@ -19,7 +19,7 @@
   },
   "errors": "replace",
   "model_max_length": 1024,
-  "name_or_path": "ArthurZ/whisper-small.en",
+  "name_or_path": "/home/arthur_huggingface_co/whisper/_whisper/multi-hf",
   "pad_token": null,
   "processor_class": "WhisperProcessor",
   "special_tokens_map_file": null,
