@@ -19,8 +19,9 @@
   },
   "errors": "replace",
   "model_max_length": 1024,
-  "name_or_path": "whisper-multi/test_added_eot",
+  "name_or_path": "openai/whisper-large",
   "pad_token": null,
+  "processor_class": "WhisperProcessor",
   "special_tokens_map_file": null,
   "tokenizer_class": "WhisperTokenizer",
   "unk_token": {
