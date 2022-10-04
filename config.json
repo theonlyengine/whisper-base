@@ -19,6 +19,16 @@
   "encoder_layerdrop": 0.0,
   "encoder_layers": 6,
   "eos_token_id": 50257,
+  "forced_decoder_ids": [
+    [
+      1,
+      50266
+    ],
+    [
+      2,
+      50363
+    ]
+  ],
   "init_std": 0.02,
   "is_encoder_decoder": true,
   "max_source_positions": 1500,
