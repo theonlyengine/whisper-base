@@ -40,7 +40,7 @@
   "model_type": "whisper",
   "num_hidden_layers": 6,
   "num_mel_bins": 80,
-  "pad_token_id": 0,
+  "pad_token_id": 50257,
   "scale_embedding": false,
   "suppress_tokens": [
     1,
