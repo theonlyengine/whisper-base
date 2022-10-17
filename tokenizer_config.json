@@ -18,10 +18,11 @@
     "single_word": false
   },
   "errors": "replace",
-  "model_max_length": 1024,
-  "name_or_path": "openai/whisper-large",
+  "model_max_length": 448,
+  "name_or_path": "openai/whisper-base",
   "pad_token": null,
   "processor_class": "WhisperProcessor",
+  "return_attention_mask": false,
   "special_tokens_map_file": null,
   "tokenizer_class": "WhisperTokenizer",
   "unk_token": {
