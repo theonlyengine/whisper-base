@@ -139,6 +139,20 @@ model-index:
     - name: Test WER
       type: wer
       value: 1.284936273212057
+  - task:
+      name: Automatic Speech Recognition
+      type: automatic-speech-recognition
+    dataset:
+      name: Common Voice 11.0
+      type: mozilla-foundation/common_voice_11_0
+      config: hi
+      split: test
+      args:
+        language: hi
+    metrics:
+    - name: Test WER
+      type: wer
+      value: 131
 pipeline_tag: automatic-speech-recognition
 license: apache-2.0
 ---
