@@ -138,7 +138,7 @@ model-index:
     metrics:
     - name: Test WER
       type: wer
-      value: 1.284936273212057
+      value: 12.84936273212057
   - task:
       name: Automatic Speech Recognition
       type: automatic-speech-recognition
