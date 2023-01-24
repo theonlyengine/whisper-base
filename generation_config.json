@@ -3,6 +3,7 @@
     220,
     50257
   ],
+  "return_timestamps":false,
   "bos_token_id": 50257,
   "decoder_start_token_id": 50258,
   "eos_token_id": 50257,
