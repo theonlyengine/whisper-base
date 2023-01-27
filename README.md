@@ -157,173 +157,235 @@ pipeline_tag: automatic-speech-recognition
 license: apache-2.0
 ---
 
-# Whisper 
+# Whisper
 
-[OpenAI's Whisper](https://openai.com/blog/whisper/)
+Whisper is a pre-trained model for automatic speech recognition (ASR) and speech translation. Trained on 680k hours 
+of labelled data, Whisper models demonstrate a strong ability to generalise to many datasets and domains **without** the need 
+for fine-tuning.
 
-The Whisper model was proposed in [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf) by Alec Radford, Jong Wook Kim, Tao Xu, Greg Brockman, Christine McLeavey, Ilya Sutskever.
+Whisper was proposed in the paper [Robust Speech Recognition via Large-Scale Weak Supervision](https://arxiv.org/abs/2212.04356) 
+by Alec Radford et al from OpenAI. The original code repository can be found [here](https://github.com/openai/whisper).
 
-**Disclaimer**: Content from **this** model card has been written by the Hugging Face team, and parts of it were copy pasted from the original model card.
+**Disclaimer**: Content for this model card has partly been written by the Hugging Face team, and parts of it were 
+copied and pasted from the original model card.
 
+## Model details
 
-## Intro
+Whisper is a Transformer based encoder-decoder model, also referred to as a _sequence-to-sequence_ model. 
+It was trained on 680k hours of labelled speech data annotated using large-scale weak supervision. 
 
-The first paragraphs of the abstract read as follows : 
+The models were trained on either English-only data or multilingual data. The English-only models were trained 
+on the task of speech recognition. The multilingual models were trained on both speech recognition and speech 
+translation. For speech recognition, the model predicts transcriptions in the *same* language as the audio. 
+For speech translation, the model predicts transcriptions to a *different* language to the audio.
 
-> We study the capabilities of speech processing systems trained simply to predict large amounts of transcripts of audio on the internet. When scaled to 680,000 hours of multilingual and multitask supervision, the resulting models generalize well to standard benchmarks and are often competitive with prior fully supervised results but in a zeroshot transfer setting without the need for any finetuning. 
-> When compared to humans, the models approach their accuracy and robustness. We are releasing models and inference code to serve as a foundation for further work on robust speech processing.
+Whisper checkpoints come in five configurations of varying model sizes.
+The smallest four are trained on either English-only or multilingual data.
+The largest checkpoints are multilingual only. All ten of the pre-trained checkpoints 
+are available on the [Hugging Face Hub](https://huggingface.co/models?search=openai/whisper). The 
+checkpoints are summarised in the following table with links to the models on the Hub:
 
-The original code repository can be found [here](https://github.com/openai/whisper).
-
-## Model details 
-
-The Whisper models are trained for speech recognition and translation tasks, capable of transcribing speech audio into the text in the language it is spoken (ASR) as well as translated into English (speech translation). Researchers at OpenAI developed the models to study the robustness of speech processing systems trained under large-scale weak supervision. There are 9 models of different sizes and capabilities, summarised in the following table.
-
-|  Size  | Parameters | English-only model | Multilingual model |  
-|:------:|:----------:|:------------------:|:------------------:|
-|  tiny  |    39 M    |         ✓          |         ✓          |
-|  base  |    74 M    |         ✓          |         ✓          |
-| small  |   244 M    |         ✓          |         ✓          |
-| medium |   769 M    |         ✓          |         ✓          |
-| large  |   1550 M   |                    |         ✓          |
-
-
-
-## Model description 
-
-Whisper is an auto-regressive automatic speech recognition encoder-decoder model that was trained on 680 000 hours of 16kHz sampled multilingual audio. It was fully trained in a supervised manner, with multiple tasks : 
-
-- English transcription 
-- Any-to-English speech translation
-- Non-English transcription
-- No speech prediction 
-
-To each task corresponds a sequence of tokens that are given to the decoder as *context tokens*. The beginning of a transcription always starts with `<|startoftranscript|>` which is why the `decoder_start_token` is always set to `tokenizer.encode("<|startoftranscript|>")`. The following token should be the language token, which is automatically detected in the original code. Finally, the task is define using either `<|transcribe|>` or `<|translate|>`. In addition, a `<|notimestamps|>` token is added if the task does not include timestamp prediction.
-
+| Size     | Parameters | English-only                                         | Multilingual                                        |
+|----------|------------|------------------------------------------------------|-----------------------------------------------------|
+| tiny     | 39 M       | [✓](https://huggingface.co/openai/whisper-tiny.en)   | [✓](https://huggingface.co/openai/whisper-tiny)     |
+| base     | 74 M       | [✓](https://huggingface.co/openai/whisper-base.en)   | [✓](https://huggingface.co/openai/whisper-base)     |
+| small    | 244 M      | [✓](https://huggingface.co/openai/whisper-small.en)  | [✓](https://huggingface.co/openai/whisper-small)    |
+| medium   | 769 M      | [✓](https://huggingface.co/openai/whisper-medium.en) | [✓](https://huggingface.co/openai/whisper-medium)   |
+| large    | 1550 M     | x                                                    | [✓](https://huggingface.co/openai/whisper-large)    |
+| large-v2 | 1550 M     | x                                                    | [✓](https://huggingface.co/openai/whisper-large-v2) |
 
 # Usage
 
-To transcribe or translate audio files, the model has to be used along a `WhisperProcessor`. The `WhisperProcessor.get_decoder_prompt_ids` function is used to get a list of `( idx, token )` tuples, which can either be set in the config, or directly passed to the generate function, as `forced_decoder_ids`. 
+To transcribe audio samples, the model has to be used alongside a [`WhisperProcessor`](https://huggingface.co/docs/transformers/model_doc/whisper#transformers.WhisperProcessor).
 
+The `WhisperProcessor` is used to:
+1. Pre-process the audio inputs (converting them to log-Mel spectrograms for the model)
+2. Post-process the model outputs (converting them from tokens to text)
 
-## Transcription 
-In the following example, the english only model is used. We set the `decoder_input_ids` accordingly.
+The model is informed of which task to perform (transcription or translation) by passing the appropriate "context tokens". These context tokens 
+are a sequence of tokens that are given to the decoder at the start of the decoding process, and take the following order:
+1. The transcription always starts with the `<|startoftranscript|>` token
+2. The second token is the language token (e.g. `<|en|>` for English)
+3. The third token is the "task token". It can take one of two values: `<|transcribe|>` for speech recognition or `<|translate|>` for speech translation
+4. In addition, a `<|notimestamps|>` token is added if the model should not include timestamp prediction
 
+Thus, a typical sequence of context tokens might look as follows:
+```
+<|startoftranscript|> <|en|> <|transcribe|> <|notimestamps|>
+```
+Which tells the model to decode in English, under the task of speech recognition, and not to predict timestamps.
 
-### English to english 
-The "<|en|>" token is used to specify that the speech is in english and should be transcribed to english 
+These tokens can either be forced or un-forced. If they are forced, the model is made to predict each token at 
+each position. This allows one to control the output language and task for the Whisper model. If they are un-forced, 
+the Whisper model will automatically predict the output langauge and task itself.
+
+The context tokens can be set accordingly:
 
 ```python
->>> from transformers import WhisperProcessor, WhisperForConditionalGeneration
->>> from datasets import load_dataset
->>> import torch
-
->>> # load model and processor
->>> processor = WhisperProcessor.from_pretrained("openai/whisper-base")
->>> model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-base")
-
->>> # load dummy dataset and read soundfiles
->>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
->>> input_features = processor(ds[0]["audio"]["array"], return_tensors="pt").input_features 
-
->>> # Generate logits
->>> logits = model(input_features, decoder_input_ids = torch.tensor([[50258]]).logits 
->>> # take argmax and decode
->>> predicted_ids = torch.argmax(logits, dim=-1)
->>> transcription = processor.batch_decode(predicted_ids)
-['<|endoftext|>']
+model.config.forced_decoder_ids = WhisperProcessor.get_decoder_prompt_ids(language="english", task="transcribe")
 ```
 
-### French to French 
-In order to obtain the full transcription, the `generate()` function is used. The following example demonstrates a french to french 
-transcription. 
+Which forces the model to predict in English under the task of speech recognition.
+
+## Transcription
+
+### English to English 
+In this example, the context tokens are 'unforced', meaning the model automatically predicts the output language
+(English) and task (transcribe).
 
 ```python
 >>> from transformers import WhisperProcessor, WhisperForConditionalGeneration
 >>> from datasets import load_dataset
->>> import torch
 
 >>> # load model and processor
 >>> processor = WhisperProcessor.from_pretrained("openai/whisper-base")
 >>> model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-base")
+>>> model.config.forced_decoder_ids = None
 
->>> # load dummy dataset and read soundfiles
->>> ds = load_dataset("common_voice", "fr", split="test", streaming=True)
->>> ds = ds.cast_column("audio", datasets.Audio(sampling_rate=16_000))
->>> input_speech = next(iter(ds))["audio"]["array"]
->>> model.config.forced_decoder_ids = processor.get_decoder_prompt_ids(language = "fr", task = "transcribe")
->>> input_features = processor(input_speech, return_tensors="pt").input_features 
+>>> # load dummy dataset and read audio files
+>>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
+>>> sample = ds[0]["audio"]
+>>> input_features = processor(sample["array"], sampling_rate=sample["sampling_rate"], return_tensors="pt").input_features 
+
+>>> # generate token ids
 >>> predicted_ids = model.generate(input_features)
+>>> # decode token ids to text
+>>> transcription = processor.batch_decode(predicted_ids, skip_special_tokens=False)
+['<|startoftranscript|><|en|><|transcribe|><|notimestamps|> Mr. Quilter is the apostle of the middle classes and we are glad to welcome his gospel.<|endoftext|>']
+
+>>> transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
+[' Mr. Quilter is the apostle of the middle classes and we are glad to welcome his gospel.']
+```
+The context tokens can be removed from the start of the transcription by setting `skip_special_tokens=True`.
+
+### French to French 
+The following example demonstrates French to French transcription by setting the decoder ids appropriately. 
+
+```python
+>>> from transformers import WhisperProcessor, WhisperForConditionalGeneration
+>>> from datasets import Audio, load_dataset
+
+>>> # load model and processor
+>>> processor = WhisperProcessor.from_pretrained("openai/whisper-base")
+>>> model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-base")
+>>> forced_decoder_ids = processor.get_decoder_prompt_ids(language="french", task="transcribe")
+
+>>> # load streaming dataset and read first audio sample
+>>> ds = load_dataset("common_voice", "fr", split="test", streaming=True)
+>>> ds = ds.cast_column("audio", Audio(sampling_rate=16_000))
+>>> input_speech = next(iter(ds))["audio"]
+>>> input_features = processor(input_speech["array"], sampling_rate=input_speech["sampling_rate"], return_tensors="pt").input_features
+
+>>> # generate token ids
+>>> predicted_ids = model.generate(input_features, forced_decoder_ids=forced_decoder_ids)
+>>> # decode token ids to text
 >>> transcription = processor.batch_decode(predicted_ids)
 ['<|startoftranscript|><|fr|><|transcribe|><|notimestamps|> Un vrai travail intéressant va enfin être mené sur ce sujet.<|endoftext|>']
 
->>> transcription = processor.batch_decode(predicted_ids, skip_special_tokens = True)
+>>> transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
 [' Un vrai travail intéressant va enfin être mené sur ce sujet.']
 ```
 
 ## Translation 
-The "<|translate|>" is used as the first decoder input token to specify the transcription task. 
+Setting the task to "translate" forces the Whisper model to perform speech translation.
 
 ### French to English
 
 ```python
 >>> from transformers import WhisperProcessor, WhisperForConditionalGeneration
->>> from datasets import load_dataset
->>> import torch
+>>> from datasets import Audio, load_dataset
 
 >>> # load model and processor
 >>> processor = WhisperProcessor.from_pretrained("openai/whisper-base")
 >>> model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-base")
+>>> forced_decoder_ids = processor.get_decoder_prompt_ids(language="french", task="translate")
 
->>> # load dummy dataset and read soundfiles
+>>> # load streaming dataset and read first audio sample
 >>> ds = load_dataset("common_voice", "fr", split="test", streaming=True)
->>> ds = ds.cast_column("audio", datasets.Audio(sampling_rate=16_000))
->>> input_speech = next(iter(ds))["audio"]["array"]
->>> # tokenize
->>> input_features = processor(input_speech, return_tensors="pt").input_features 
->>> forced_decoder_ids = processor.get_decoder_prompt_ids(language = "fr", task = "translate")
+>>> ds = ds.cast_column("audio", Audio(sampling_rate=16_000))
+>>> input_speech = next(iter(ds))["audio"]
+>>> input_features = processor(input_speech["array"], sampling_rate=input_speech["sampling_rate"], return_tensors="pt").input_features
 
->>> predicted_ids = model.generate(input_features, forced_decoder_ids = forced_decoder_ids)
->>> transcription = processor.batch_decode(predicted_ids, skip_special_tokens = True)
-[' A really interesting work will finally be held on this subject.']
+>>> # generate token ids
+>>> predicted_ids = model.generate(input_features, forced_decoder_ids=forced_decoder_ids)
+>>> # decode token ids to text
+>>> transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
+[' A very interesting work, we will finally be given on this subject.']
 ```
 
 ## Evaluation
 
-This code snippet shows how to evaluate **openai/whisper-base** on LibriSpeech's "clean" and "other" test data.
+This code snippet shows how to evaluate Whisper Base on [LibriSpeech test-clean](https://huggingface.co/datasets/librispeech_asr):
  
 ```python
 >>> from datasets import load_dataset
 >>> from transformers import WhisperForConditionalGeneration, WhisperProcessor
->>> import soundfile as sf
 >>> import torch
 >>> from evaluate import load
 
+>>> librispeech_test_clean = load_dataset("librispeech_asr", "clean", split="test")
 
->>> librispeech_eval = load_dataset("librispeech_asr", "clean", split="test")
-
->>> model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-base").to("cuda")
 >>> processor = WhisperProcessor.from_pretrained("openai/whisper-base")
+>>> model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-base").to("cuda")
 
 >>> def map_to_pred(batch):
->>>     input_features = processor(batch["audio"]["array"], return_tensors="pt").input_features
-
+>>>     audio = batch["audio"]
+>>>     input_features = processor(audio["array"], sampling_rate=audio["sampling_rate"], return_tensors="pt").input_features
+>>>     batch["reference"] = processor.tokenizer._normalize(batch['text'])
+>>> 
 >>>     with torch.no_grad():
->>>         logits = model(input_features.to("cuda")).logits
-
->>>     predicted_ids = torch.argmax(logits, dim=-1)
->>>     transcription = processor.batch_decode(predicted_ids, normalize = True)
->>>     batch['text'] = processor.tokenizer._normalize(batch['text'])
->>>     batch["transcription"] = transcription
+>>>         predicted_ids = model.generate(input_features.to("cuda"))[0]
+>>>     transcription = processor.decode(predicted_ids)
+>>>     batch["prediction"] = processor.tokenizer._normalize(transcription)
 >>>     return batch
 
->>> result = librispeech_eval.map(map_to_pred, batched=True, batch_size=1, remove_columns=["speech"])
+>>> result = librispeech_test_clean.map(map_to_pred)
 
 >>> wer = load("wer")
->>> print(wer.compute(predictions=ds["text"], references=ds["transcription"]))
-0.05082316555716899
+>>> print(100 * wer.compute(references=result["reference"], predictions=result["prediction"]))
+5.082316555716899
 ```
 
+## Long-Form Transcription
+
+The Whisper model is intrinsically designed to work on audio samples of up to 30s in duration. However, by using a chunking 
+algorithm, it can be used to transcribe audio samples of up to arbitrary length. This is possible through Transformers 
+[`pipeline`](https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.AutomaticSpeechRecognitionPipeline) 
+method. Chunking is enabled by setting `chunk_length_s=30` when instantiating the pipeline. It can also be extended to 
+predict utterance level timestamps by passing `return_timestamps=True`:
+
+```python
+>>> import torch
+>>> from transformers import pipeline
+>>> from datasets import load_dataset
+
+>>> device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
+>>> pipe = pipeline(
+>>>   "automatic-speech-recognition",
+>>>   model="openai/whisper-base",
+>>>   chunk_length_s=30,
+>>>   device=device,
+>>> )
+
+>>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
+>>> sample = ds[0]["audio"]
+
+>>> prediction = pipe(sample)["text"]
+" Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+
+>>> # we can also return timestamps for the predictions
+>>> prediction = pipe(sample, return_timestamps=True)["chunks"]
+[{'text': ' Mr. Quilter is the apostle of the middle classes and we are glad to welcome his gospel.',
+  'timestamp': (0.0, 5.44)}]
+```
+
+## Fine-Tuning
+
+The pre-trained Whisper model demonstrates a strong ability to generalise to different datasets and domains. However, 
+its predictive capabilities can be improved further for certain languages and tasks through *fine-tuning*. The blog 
+post [Fine-Tune Whisper with 🤗 Transformers](https://huggingface.co/blog/fine-tune-whisper) provides a step-by-step 
+guide to fine-tuning the Whisper model with as little as 5 hours of labelled data.
 
 ### Evaluated Use
 
@@ -360,12 +422,14 @@ There are also potential dual use concerns that come with releasing Whisper. Whi
 
 
 ### BibTeX entry and citation info
-*Since no official citation was provided, we use the following in the mean time*
 ```bibtex
 @misc{radford2022whisper,
-      title={Robust Speech Recognition via Large-Scale Weak Supervision.}, 
-      author={Alec Radford, Jong Wook Kim, Tao Xu, Greg Brockman, Christine McLeavey, Ilya Sutskever},
-      year={2022},
-      url={https://cdn.openai.com/papers/whisper.pdf},
+  doi = {10.48550/ARXIV.2212.04356},
+  url = {https://arxiv.org/abs/2212.04356},
+  author = {Radford, Alec and Kim, Jong Wook and Xu, Tao and Brockman, Greg and McLeavey, Christine and Sutskever, Ilya},
+  title = {Robust Speech Recognition via Large-Scale Weak Supervision},
+  publisher = {arXiv},
+  year = {2022},
+  copyright = {arXiv.org perpetual, non-exclusive license}
 }
 ```
