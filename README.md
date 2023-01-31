@@ -20,7 +20,7 @@ language:
 - hi
 - fi
 - vi
-- iw
+- he
 - uk
 - el
 - ms
