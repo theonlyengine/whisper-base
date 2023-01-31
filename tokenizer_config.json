@@ -27,7 +27,7 @@
   "tokenizer_class": "WhisperTokenizer",
   "unk_token": {
     "__type": "AddedToken",
-    "content": "",
+    "content": "<|endoftext|>",
     "lstrip": false,
     "normalized": true,
     "rstrip": false,
