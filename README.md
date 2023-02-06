@@ -371,7 +371,7 @@ predict utterance level timestamps by passing `return_timestamps=True`:
 >>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
 >>> sample = ds[0]["audio"]
 
->>> prediction = pipe(sample)["text"]
+>>> prediction = pipe(sample.copy())["text"]
 " Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
 
 >>> # we can also return timestamps for the predictions
