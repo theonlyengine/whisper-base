@@ -121,7 +121,7 @@
   "max_initial_timestamp_index": 1,
   "max_length": 448,
   "no_timestamps_token_id": 50363,
-  "pad_token_id": 50256,
+  "pad_token_id": 50257,
   "return_timestamps": false,
   "suppress_tokens": [
     1,
