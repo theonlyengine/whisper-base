@@ -351,8 +351,8 @@ This code snippet shows how to evaluate Whisper Base on [LibriSpeech test-clean]
 The Whisper model is intrinsically designed to work on audio samples of up to 30s in duration. However, by using a chunking 
 algorithm, it can be used to transcribe audio samples of up to arbitrary length. This is possible through Transformers 
 [`pipeline`](https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.AutomaticSpeechRecognitionPipeline) 
-method. Chunking is enabled by setting `chunk_length_s=30` when instantiating the pipeline. It can also be extended to 
-predict utterance level timestamps by passing `return_timestamps=True`:
+method. Chunking is enabled by setting `chunk_length_s=30` when instantiating the pipeline. With chunking enabled, the pipeline 
+can be run with batched inference. It can also be extended to predict sequence level timestamps by passing `return_timestamps=True`:
 
 ```python
 >>> import torch
@@ -371,14 +371,16 @@ predict utterance level timestamps by passing `return_timestamps=True`:
 >>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
 >>> sample = ds[0]["audio"]
 
->>> prediction = pipe(sample.copy())["text"]
+>>> prediction = pipe(sample.copy(), batch_size=8)["text"]
 " Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
 
 >>> # we can also return timestamps for the predictions
->>> prediction = pipe(sample, return_timestamps=True)["chunks"]
+>>> prediction = pipe(sample.copy(), batch_size=8, return_timestamps=True)["chunks"]
 [{'text': ' Mr. Quilter is the apostle of the middle classes and we are glad to welcome his gospel.',
   'timestamp': (0.0, 5.44)}]
 ```
+
+Refer to the blog post [ASR Chunking](https://huggingface.co/blog/asr-chunking) for more details on the chunking algorithm.
 
 ## Fine-Tuning
 
