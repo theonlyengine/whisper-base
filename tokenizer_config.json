@@ -19,7 +19,7 @@
     "single_word": false
   },
   "errors": "replace",
-  "model_max_length": 448,
+  "model_max_length": 1024,
   "pad_token": null,
   "processor_class": "WhisperProcessor",
   "return_attention_mask": false,
